@@ -37,6 +37,7 @@
  *  Neurobiology. We copyright (C) it and permit its use provided it is not
  *  sold to others. Originally written by Dan Ts'o circa 1984 or so.
  *
+ *  15-Aug-2019 MR, Michael Robinson.  Added GPIO status lights
  *  07-May-2017 JH, Don North  compiles under MACOS, passes GCC warning levels -Wall -Wextra
  *  12-Jan-2017 JH  taken from tu58em
  */
@@ -51,6 +52,7 @@
 #include <strings.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <wiringPi.h>
 
 #include "error.h"
 #include "utils.h"
@@ -208,6 +210,8 @@ static void bootio(void) {
 		return;
 	}
 
+	digitalWrite(0,1);
+ 
 	if (opt_verbose)
 		info("%-8s unit=%d blk=0x%04X cnt=0x%04X", "boot", unit, 0,
 		TU_BOOT_LEN);
@@ -215,6 +219,7 @@ static void bootio(void) {
 	// seek to block zero, should never be an error :-)
 	if (image_blockseek(img, 0, 0, 0)) {
 		error("boot seek error unit %d", unit);
+		digitalWrite(0,0);
 		return;
 	}
 
@@ -222,6 +227,7 @@ static void bootio(void) {
 	if ((count = image_read(img, buffer, TU_BOOT_LEN)) != TU_BOOT_LEN) {
 		error("boot file read error unit %d, expected %d, received %d", unit,
 		TU_BOOT_LEN, count);
+		digitalWrite(0,0);
 		return;
 	}
 
@@ -229,9 +235,11 @@ static void bootio(void) {
 	if ((count = serial_devtxwrite(&tu58_serial, buffer, TU_BOOT_LEN)) != TU_BOOT_LEN) {
 		error("boot serial write error unit %d, expected %d, received %d", unit,
 		TU_BOOT_LEN, count);
+		digitalWrite(0,0);
 		return;
 	}
 
+	digitalWrite(0,0);
 	return;
 }
 
@@ -656,6 +664,19 @@ static void command(int8_t flag) {
 	if (opt_debug)
 		info("opcode=0x%02X length=0x%02X", pk.opcode, pk.length);
 
+	switch (pk.opcode) {
+	case TUO_GETCHAR:
+	case TUO_INIT:
+	case TUO_SEEK:
+	case TUO_READ:
+		digitalWrite(0,1);
+		break;
+	case TUO_WRITE:
+		digitalWrite(1,1);
+		break;
+	default:
+		break;
+	}
 	// dump command if requested
 	if (opt_verbose) {
 
@@ -806,6 +827,8 @@ static void command(int8_t flag) {
 
 	}
 
+	digitalWrite(0,0);
+	digitalWrite(1,0);
 	return;
 }
 

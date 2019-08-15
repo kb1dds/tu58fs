@@ -35,6 +35,7 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
+ *  15-Aug-2019 MR              GPIO pin light control
  *  17-May-2017 JH  V 1.3.0     new option "--usbdelay" for "--boot"
  *  07-May-2017 JH  V 1.2.1	    passes GCC warning levels -Wall -Wextra
  *  23-Mar-2017 JH  V 1.2.0     --boot option
@@ -58,6 +59,7 @@
 #include <stdarg.h>
 #include <strings.h>
 #include <pthread.h>
+#include <wiringPi.h>
 
 #include "error.h"
 #include "utils.h"
@@ -855,6 +857,11 @@ int main(int argc, char *argv[]) {
 
 	error_clear();
 	ferr = stdout; // ferr in Eclipse console not visible?
+
+	// GPIO pins for Raspberry PI status lights
+	wiringPiSetup();
+	pinMode(0,OUTPUT);
+	pinMode(1,OUTPUT);
 
 	tu58images_init();
 
